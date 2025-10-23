@@ -134,7 +134,7 @@ class InterviewQuestionApp {
         if (fileExtension === 'txt') {
             return this.parseTextFile(file);
         } else if (fileExtension === 'pdf') {
-            return this.parsePDFWithOpenAI(file);
+            return this.parsePDFFile(file);
         } else {
             throw new Error('Unsupported file type. Please upload a PDF or TXT file.');
         }
@@ -149,66 +149,36 @@ class InterviewQuestionApp {
         });
     }
 
-    async parsePDFWithOpenAI(file) {
+    async parsePDFFile(file) {
         try {
-            // Convert PDF to images using PDF.js
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
             
-            let extractedText = '';
+            let fullText = '';
             
-            // Process each page of the PDF
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 2.0 });
-                
-                // Create canvas to render PDF page as image
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                
-                // Render PDF page to canvas
-                await page.render({
-                    canvasContext: context,
-                    viewport: viewport
-                }).promise;
-                
-                // Convert canvas to base64 image
-                const imageData = canvas.toDataURL('image/png');
-                
-                // Send image to OpenAI Vision API for text extraction
-                const pageText = await this.extractTextFromImage(imageData);
-                extractedText += pageText + '\n';
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items
+                    .filter(item => item.str && item.str.trim())
+                    .map(item => item.str.trim())
+                    .join(' ');
+                fullText += pageText + '\n';
             }
             
-            return extractedText.trim();
-        } catch (error) {
-            console.error('PDF processing error:', error);
-            throw new Error('Failed to process PDF. Please try a different file or contact support.');
-        }
-    }
-
-    async extractTextFromImage(imageData) {
-        try {
-            // Send image to our API endpoint for OpenAI Vision processing
-            const response = await fetch('/api/extract-text', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: imageData })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to extract text from image');
+            const cleanText = fullText.trim();
+            
+            // If we got very little text, it might be a scanned PDF
+            if (cleanText.length < 50) {
+                throw new Error('This PDF appears to be scanned or image-based. Please try uploading a .txt file with your CV content instead, or use a text-based PDF.');
             }
-
-            const result = await response.json();
-            return result.text || '';
+            
+            return cleanText;
         } catch (error) {
-            console.error('Text extraction error:', error);
-            return ''; // Return empty string if extraction fails
+            if (error.message.includes('scanned') || error.message.includes('image-based')) {
+                throw error;
+            }
+            throw new Error('Failed to parse PDF file. Please try uploading a .txt file with your CV content instead.');
         }
     }
 
