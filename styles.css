@@ -156,6 +156,16 @@ header p {
     align-items: center;
 }
 
+.upload-tip {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #856404;
+}
+
 /* Button Styles */
 .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
