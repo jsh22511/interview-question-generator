@@ -13,49 +13,6 @@ class InterviewQuestionApp {
     init() {
         this.setupEventListeners();
         this.setupCharacterCounter();
-        this.waitForPDFJS();
-    }
-
-    waitForPDFJS() {
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        
-        const checkPDFJS = () => {
-            attempts++;
-            
-            if (typeof pdfjsLib !== 'undefined' && pdfjsLib.getDocument) {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
-                console.log('PDF.js loaded successfully');
-                this.pdfWorker = pdfjsLib;
-            } else if (attempts < maxAttempts) {
-                setTimeout(checkPDFJS, 100);
-            } else {
-                console.warn('PDF.js failed to load after 5 seconds');
-                // Try to load PDF.js dynamically if it's not available
-                this.loadPDFJSDynamically();
-            }
-        };
-        checkPDFJS();
-    }
-
-    loadPDFJSDynamically() {
-        // Check if script is already being loaded
-        if (document.querySelector('script[src*="pdf.min.js"]')) {
-            setTimeout(() => this.waitForPDFJS(), 100);
-            return;
-        }
-
-        console.log('Loading PDF.js dynamically...');
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js';
-        script.onload = () => {
-            console.log('PDF.js loaded dynamically');
-            this.waitForPDFJS();
-        };
-        script.onerror = () => {
-            console.error('Failed to load PDF.js');
-        };
-        document.head.appendChild(script);
     }
 
     setupEventListeners() {
@@ -170,7 +127,7 @@ class InterviewQuestionApp {
         if (fileExtension === 'txt') {
             return this.parseTextFile(file);
         } else if (fileExtension === 'pdf') {
-            return this.parsePDFFile(file);
+            return this.parsePDFWithServer(file);
         } else {
             throw new Error('Unsupported file type. Please upload a PDF or TXT file.');
         }
@@ -185,45 +142,37 @@ class InterviewQuestionApp {
         });
     }
 
-    async parsePDFFile(file) {
+    async parsePDFWithServer(file) {
         try {
-            // Check if PDF.js is loaded
-            if (!this.pdfWorker || typeof this.pdfWorker.getDocument === 'undefined') {
-                throw new Error('PDF.js library not loaded. Please refresh the page and try again.');
-            }
-            
+            // Convert PDF to base64
             const arrayBuffer = await file.arrayBuffer();
-            const pdf = await this.pdfWorker.getDocument(arrayBuffer).promise;
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
             
-            let fullText = '';
-            
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items
-                    .filter(item => item.str && item.str.trim())
-                    .map(item => item.str.trim())
-                    .join(' ');
-                fullText += pageText + '\n';
+            // Send PDF to server for parsing
+            const response = await fetch('/api/parse-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    pdfData: base64,
+                    fileName: file.name
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to parse PDF');
             }
-            
-            const cleanText = fullText.trim();
-            
-            if (cleanText.length < 10) {
-                throw new Error('This PDF appears to be scanned or image-based. Please copy the content into a .txt file and upload that instead.');
-            }
-            
-            return cleanText;
+
+            const result = await response.json();
+            return result.text;
         } catch (error) {
             console.error('PDF parsing error:', error);
-            
-            if (error.message.includes('scanned') || error.message.includes('image-based')) {
-                throw error;
-            }
-            
             throw new Error('Failed to parse PDF. Please try uploading a .txt file with your CV content instead.');
         }
     }
+
 
     displayResults(data) {
         const resultsDiv = document.getElementById('results');
