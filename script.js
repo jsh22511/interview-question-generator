@@ -134,7 +134,7 @@ class InterviewQuestionApp {
         if (fileExtension === 'txt') {
             return this.parseTextFile(file);
         } else if (fileExtension === 'pdf') {
-            return this.parsePDFFile(file);
+            return this.sendPDFToOpenAI(file);
         } else {
             throw new Error('Unsupported file type. Please upload a PDF or TXT file.');
         }
@@ -149,36 +149,35 @@ class InterviewQuestionApp {
         });
     }
 
-    async parsePDFFile(file) {
+    async sendPDFToOpenAI(file) {
         try {
+            // Convert PDF to base64
             const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+            const base64Data = `data:application/pdf;base64,${base64}`;
             
-            let fullText = '';
-            
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items
-                    .filter(item => item.str && item.str.trim())
-                    .map(item => item.str.trim())
-                    .join(' ');
-                fullText += pageText + '\n';
+            // Send PDF directly to our API for OpenAI analysis
+            const response = await fetch('/api/analyze-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    pdfData: base64Data,
+                    fileName: file.name
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to analyze PDF');
             }
-            
-            const cleanText = fullText.trim();
-            
-            // If we got very little text, it might be a scanned PDF
-            if (cleanText.length < 50) {
-                throw new Error('This PDF appears to be scanned or image-based. Please try uploading a .txt file with your CV content instead, or use a text-based PDF.');
-            }
-            
-            return cleanText;
+
+            const result = await response.json();
+            return result.extractedText;
         } catch (error) {
-            if (error.message.includes('scanned') || error.message.includes('image-based')) {
-                throw error;
-            }
-            throw new Error('Failed to parse PDF file. Please try uploading a .txt file with your CV content instead.');
+            console.error('PDF analysis error:', error);
+            throw new Error('Failed to analyze PDF. Please try a different file or contact support.');
         }
     }
 
