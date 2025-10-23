@@ -12,8 +12,20 @@ class InterviewQuestionApp {
 
     init() {
         this.setupEventListeners();
-        this.setupPDFWorker();
         this.setupCharacterCounter();
+        this.waitForPDFJS();
+    }
+
+    waitForPDFJS() {
+        const checkPDFJS = () => {
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+                console.log('PDF.js loaded successfully');
+            } else {
+                setTimeout(checkPDFJS, 100);
+            }
+        };
+        checkPDFJS();
     }
 
     setupEventListeners() {
@@ -30,12 +42,6 @@ class InterviewQuestionApp {
         retryBtn?.addEventListener('click', () => this.retry());
     }
 
-    setupPDFWorker() {
-        // Configure PDF.js worker
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
-        }
-    }
 
     setupCharacterCounter() {
         const jdTextarea = document.getElementById('jd-text');
@@ -151,6 +157,11 @@ class InterviewQuestionApp {
 
     async parsePDFFile(file) {
         try {
+            // Check if PDF.js is loaded
+            if (typeof pdfjsLib === 'undefined') {
+                throw new Error('PDF.js library not loaded. Please refresh the page and try again.');
+            }
+            
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
             
