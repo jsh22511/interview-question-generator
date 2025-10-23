@@ -1,0 +1,33 @@
+{
+  "name": "interview-question-generator",
+  "version": "1.0.0",
+  "description": "Generate tailored interview questions from job descriptions and CVs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required for this project'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.0",
+    "openai": "^4.0.0",
+    "docx": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "interview",
+    "questions",
+    "ai",
+    "openai",
+    "vercel"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
