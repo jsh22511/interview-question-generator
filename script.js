@@ -17,15 +17,45 @@ class InterviewQuestionApp {
     }
 
     waitForPDFJS() {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        
         const checkPDFJS = () => {
-            if (typeof pdfjsLib !== 'undefined') {
+            attempts++;
+            
+            if (typeof pdfjsLib !== 'undefined' && pdfjsLib.getDocument) {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
                 console.log('PDF.js loaded successfully');
-            } else {
+                this.pdfWorker = pdfjsLib;
+            } else if (attempts < maxAttempts) {
                 setTimeout(checkPDFJS, 100);
+            } else {
+                console.warn('PDF.js failed to load after 5 seconds');
+                // Try to load PDF.js dynamically if it's not available
+                this.loadPDFJSDynamically();
             }
         };
         checkPDFJS();
+    }
+
+    loadPDFJSDynamically() {
+        // Check if script is already being loaded
+        if (document.querySelector('script[src*="pdf.min.js"]')) {
+            setTimeout(() => this.waitForPDFJS(), 100);
+            return;
+        }
+
+        console.log('Loading PDF.js dynamically...');
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js';
+        script.onload = () => {
+            console.log('PDF.js loaded dynamically');
+            this.waitForPDFJS();
+        };
+        script.onerror = () => {
+            console.error('Failed to load PDF.js');
+        };
+        document.head.appendChild(script);
     }
 
     setupEventListeners() {
@@ -158,12 +188,12 @@ class InterviewQuestionApp {
     async parsePDFFile(file) {
         try {
             // Check if PDF.js is loaded
-            if (typeof pdfjsLib === 'undefined') {
+            if (!this.pdfWorker || typeof this.pdfWorker.getDocument === 'undefined') {
                 throw new Error('PDF.js library not loaded. Please refresh the page and try again.');
             }
             
             const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            const pdf = await this.pdfWorker.getDocument(arrayBuffer).promise;
             
             let fullText = '';
             
