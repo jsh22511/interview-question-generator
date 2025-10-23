@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+export const config = {
+  runtime: 'nodejs',
+};
+
 // Rate limiting: Simple in-memory token bucket
 // In production, consider using Vercel KV or similar
 const rateLimitMap = new Map<string, { tokens: number; lastRefill: number }>();

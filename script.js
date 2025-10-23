@@ -86,6 +86,9 @@ class InterviewQuestionApp {
             };
 
             // Make API call
+            console.log('Making API call to:', this.apiEndpoint);
+            console.log('Request data:', requestData);
+            
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: {
@@ -94,11 +97,17 @@ class InterviewQuestionApp {
                 body: JSON.stringify(requestData)
             });
 
-            const data = await response.json();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to generate questions');
+                const errorText = await response.text();
+                console.error('API Error Response:', errorText);
+                throw new Error(`API Error (${response.status}): ${errorText}`);
             }
+
+            const data = await response.json();
+            console.log('API Response:', data);
 
             this.currentData = data;
             this.displayResults(data);
