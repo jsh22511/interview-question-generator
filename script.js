@@ -134,7 +134,7 @@ class InterviewQuestionApp {
         if (fileExtension === 'txt') {
             return this.parseTextFile(file);
         } else if (fileExtension === 'pdf') {
-            return this.sendPDFToOpenAI(file);
+            return this.parsePDFFile(file);
         } else {
             throw new Error('Unsupported file type. Please upload a PDF or TXT file.');
         }
@@ -149,35 +149,76 @@ class InterviewQuestionApp {
         });
     }
 
-    async sendPDFToOpenAI(file) {
+    async parsePDFFile(file) {
         try {
-            // Convert PDF to base64
             const arrayBuffer = await file.arrayBuffer();
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-            const base64Data = `data:application/pdf;base64,${base64}`;
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
             
-            // Send PDF directly to our API for OpenAI analysis
-            const response = await fetch('/api/analyze-pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    pdfData: base64Data,
-                    fileName: file.name
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to analyze PDF');
+            let fullText = '';
+            
+            // Process each page
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                
+                // Extract text from the page
+                const pageText = textContent.items
+                    .filter(item => item.str && item.str.trim())
+                    .map(item => item.str.trim())
+                    .join(' ');
+                
+                fullText += pageText + '\n';
             }
-
-            const result = await response.json();
-            return result.extractedText;
+            
+            const cleanText = fullText.trim();
+            
+            // If we got very little text, try a different approach
+            if (cleanText.length < 20) {
+                // Try to extract text using a more aggressive method
+                const fallbackText = await this.extractTextFallback(pdf);
+                if (fallbackText.length > cleanText.length) {
+                    return fallbackText;
+                }
+                
+                throw new Error('This PDF appears to be scanned or image-based. Please try uploading a .txt file with your CV content instead.');
+            }
+            
+            return cleanText;
         } catch (error) {
-            console.error('PDF analysis error:', error);
-            throw new Error('Failed to analyze PDF. Please try a different file or contact support.');
+            console.error('PDF parsing error:', error);
+            
+            if (error.message.includes('scanned') || error.message.includes('image-based')) {
+                throw error;
+            }
+            
+            throw new Error('Failed to parse PDF. Please try uploading a .txt file with your CV content instead.');
+        }
+    }
+
+    async extractTextFallback(pdf) {
+        try {
+            let fallbackText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                
+                // Try different text extraction methods
+                const items = textContent.items;
+                let pageText = '';
+                
+                for (const item of items) {
+                    if (item.str && item.str.trim()) {
+                        pageText += item.str + ' ';
+                    }
+                }
+                
+                fallbackText += pageText + '\n';
+            }
+            
+            return fallbackText.trim();
+        } catch (error) {
+            return '';
         }
     }
 
