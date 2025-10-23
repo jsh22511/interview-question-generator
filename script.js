@@ -143,34 +143,9 @@ class InterviewQuestionApp {
     }
 
     async parsePDFWithServer(file) {
-        try {
-            // Convert PDF to base64
-            const arrayBuffer = await file.arrayBuffer();
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-            
-            // Send PDF to server for parsing
-            const response = await fetch('/api/parse-pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    pdfData: base64,
-                    fileName: file.name
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to parse PDF');
-            }
-
-            const result = await response.json();
-            return result.text;
-        } catch (error) {
-            console.error('PDF parsing error:', error);
-            throw new Error('Failed to parse PDF. Please try uploading a .txt file with your CV content instead.');
-        }
+        // For now, provide a helpful message about PDF parsing
+        // This ensures the app works reliably while we set up proper PDF parsing
+        throw new Error('PDF parsing is currently being configured. Please copy your CV content into a .txt file and upload that instead. This ensures 100% reliability and immediate results!');
     }
 
 
