@@ -3,7 +3,7 @@
 
 class InterviewQuestionApp {
     constructor() {
-        this.apiEndpoint = '/api/generate-questions'; // Will be updated automatically by Vercel
+        this.apiEndpoint = '/api/generate-questions-simple'; // Using simple API for testing
         this.pdfWorker = null;
         this.currentData = null;
         
