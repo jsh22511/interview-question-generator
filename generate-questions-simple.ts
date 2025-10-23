@@ -1,19 +1,20 @@
-export async function POST(request: Request) {
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
     // Simple validation
     if (!body.role || !body.seniority || !body.jdText || !body.cvText) {
-      return new Response(JSON.stringify({ 
+      return NextResponse.json({ 
         error: 'Missing required fields' 
-      }), {
+      }, { 
         status: 400,
         headers: {
-          'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
+        }
       });
     }
 
@@ -37,34 +38,31 @@ export async function POST(request: Request) {
       }
     };
 
-    return new Response(JSON.stringify(response), {
-      status: 200,
+    return NextResponse.json(response, {
       headers: {
-        'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
+      }
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ 
+    return NextResponse.json({ 
       error: 'Internal server error',
       details: error.message 
-    }), {
+    }, { 
       status: 500,
       headers: {
-        'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
+      }
     });
   }
 }
 
-export async function OPTIONS() {
-  return new Response(null, {
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
