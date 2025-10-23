@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Question Generator - Virtual Wizards</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 AI Interview Question Generator</h1>
+            <p>Generate tailored interview questions from job descriptions and CVs using AI</p>
+            <p class="subtitle">Powered by Virtual Wizards</p>
+        </header>
+
+        <div class="app">
+            <form id="question-form" class="form">
+                <div class="form-group">
+                    <label for="role">Job Role *</label>
+                    <input type="text" id="role" name="role" placeholder="e.g., Software Engineer, Marketing Manager" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="seniority">Seniority Level *</label>
+                    <select id="seniority" name="seniority" required>
+                        <option value="">Select level</option>
+                        <option value="entry">Entry Level</option>
+                        <option value="mid">Mid Level</option>
+                        <option value="senior">Senior Level</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="jd-text">Job Description *</label>
+                    <textarea 
+                        id="jd-text" 
+                        name="jdText" 
+                        placeholder="Paste the complete job description here..."
+                        rows="6"
+                        required
+                    ></textarea>
+                    <div class="char-count">
+                        <span id="jd-count">0</span> characters
+                    </div>
+                </div>
+
+                    <div class="form-group">
+                        <label for="cv-text">CV Content *</label>
+                        <textarea id="cv-text" name="cvText" rows="12" placeholder="Paste your CV content here... Include your work experience, education, skills, achievements, and any other relevant details." required></textarea>
+                        <div class="char-count">
+                            <span id="cv-count">0</span> characters
+                        </div>
+                        <div class="cv-tip">
+                            💡 <strong>Easy & Reliable:</strong> Simply copy and paste your CV content here. No file uploads needed - works 100% of the time!
+                        </div>
+                    </div>
+
+                <div class="form-group">
+                    <button type="submit" id="generate-btn" class="btn-primary">
+                        <span class="btn-text">Generate Questions</span>
+                        <span class="btn-spinner" style="display: none;">⏳</span>
+                    </button>
+                </div>
+            </form>
+
+            <div id="results" class="results" style="display: none;">
+                <div class="results-header">
+                    <h2>Generated Interview Questions</h2>
+                    <div class="results-actions">
+                        <button id="copy-all-btn" class="btn-secondary">📋 Copy All</button>
+                        <button id="export-txt-btn" class="btn-secondary">📄 Export TXT</button>
+                    </div>
+                </div>
+
+                <div id="categories" class="categories">
+                    <!-- Categories will be populated by JavaScript -->
+                </div>
+
+                <div id="bonus-section" class="bonus-section" style="display: none;">
+                    <h3>🎯 Bonus Insights</h3>
+                    <div id="red-flags" class="red-flags"></div>
+                    <div id="homework-prompt" class="homework-prompt"></div>
+                </div>
+            </div>
+
+            <div id="error" class="error" style="display: none;">
+                <h3>❌ Error</h3>
+                <p id="error-message"></p>
+                <button id="retry-btn" class="btn-secondary">Try Again</button>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-content">
+                <p>© 2024 Virtual Wizards - AI-Powered Interview Questions</p>
+                <p class="footer-note">This tool uses OpenAI's GPT-4 to generate tailored interview questions based on your job description and candidate CV.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
